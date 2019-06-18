@@ -1,0 +1,8 @@
+#!/bin/env bash
+# This script will be run before the tests and must always call, as the last
+# step, the custom-pre-run script, if it exists.
+PRE_RUN_NAME="$(dirname $0)/custom-pre-run"
+
+if [ -e "$PRE_RUN_NAME" ]; then
+        $PRE_RUN_NAME
+fi

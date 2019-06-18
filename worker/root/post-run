@@ -1,0 +1,10 @@
+#!/bin/env bash
+# This script will be run after the tests and must always call, as the last
+# step, the custom-post-run script, if it exists, with the result of the tests.
+POST_RUN_NAME="$(dirname $0)/custom-post-run"
+
+result=$(test -f /root/ok)
+
+if [ -e "$POST_RUN_NAME" ]; then
+        $POST_RUN_NAME $result
+fi

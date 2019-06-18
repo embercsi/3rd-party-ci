@@ -1,0 +1,17 @@
+[Unit]
+Description=Buildbot Master
+Wants=network.target
+After=network.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+# TODO(geguileo): Use non root user
+User=root
+Group=root
+ExecStart=/usr/local/bin/buildbot start --nodaemon
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+# This will be changed by the setup
+WorkingDirectory={{WORKING_DIRECTORY}}

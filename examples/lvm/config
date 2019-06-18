@@ -1,0 +1,20 @@
+# SMEE ID that will send us the notifications from GitHub
+SMEE_ID="e2DqiMEezevJYqMu"
+
+# The name of our CI driver
+DRIVER_NAME="LVM"
+
+# Token used to send status of the test runs
+GH_TOKEN="4ff72116d06d0698288db11b01582b49453a69de"
+GH_USER="Akrog"
+
+# Secret sent by Git Hub with the notifications
+GH_EMBER_SECRET="too-many-secrets"
+
+# Script file to run before the setup has completed.  Useful for example to
+# create a pool specific for the tests.
+PRE_RUN="create-lvm.sh"
+
+# This can be a JSON string with the driver configuration or a file script
+# that, when sourced, will set variable DRIVER_CONFIG.
+DRIVER_CONFIG='{"target_protocol":"iscsi","target_ip_address":"127.0.0.1","name":"lvm","driver":"lvmvolume","volume_group":"ember-volumes","target_helper":"lioadm","multipath":false}'

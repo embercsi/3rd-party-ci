@@ -1,0 +1,49 @@
+#!/bin/env bash
+# Set DRIVER_CONFIG env variable
+set -e
+# Propagate failures through pipelines
+set -o pipefail
+
+CFG_FILE="$(dirname $0)/driver-cfg"
+
+. $CFG_FILE
+
+DOCKER_ARGS=""
+if [ -z DOCKER_VOLUMES ]; then
+    for VOL in "$DOCKER_VOLUMES"; do
+        DOCKER_ARGS+=" -v $VOL"
+    done
+fi
+
+save_logs_and_stop() {
+    docker logs ember-csi > /var/log/ember-csi.log || true
+
+    # Kill the ember-csi container
+    # Not really necessary, since we'll be killing the whole VM
+    docker rm --force ember-csi || true
+}
+
+trap "save_logs_and_stop" ERR
+
+# Run the ember-csi container
+docker run -d -e "X_CSI_BACKEND_CONFIG=$DRIVER_CONFIG" --env-file /root/env-file -t --privileged --net=host --ipc=host \
+    -v /etc/iscsi:/etc/iscsi \
+    -v /dev:/dev \
+    -v /etc/lvm:/etc/lvm \
+    -v /var/lock/lvm:/var/lock/lvm \
+    -v /etc/multipath:/etc/multipath \
+    -v /etc/multipath.conf:/etc/multipath.conf \
+    -v /lib/modules:/lib/modules \
+    -v /etc/localtime:/etc/localtime \
+    -v /run/udev:/run/udev \
+    -v /tmp:/tmp \
+    -v /var/lib/iscsi:/var/lib/iscsi $DOCKER_ARGS \
+    -p 50051:50051 --name=ember-csi --rm=false ember-csi:test
+
+
+# --ginkgo.failFast --test.parallel 1
+/root/csi-sanity --test.v --csi.endpoint=127.0.0.1:50051 --test.timeout 15m --ginkgo.v --ginkgo.progress
+# Mark that the run has been a success
+touch /root/ok
+
+save_logs_and_stop

@@ -1,0 +1,5 @@
+X_CSI_PERSISTENCE_CONFIG={"storage":"memory"}
+X_CSI_EMBER_CONFIG={"project_id":"io.ember-csi","user_id":"io.ember-csi","disable_logs":false,"debug":true,"request_multipath":true}
+PYTHONUNBUFFERED=0
+X_CSI_SPEC_VERSION=v1
+EVENTLET_NO_GREENDNS=yes

@@ -1,0 +1,10 @@
+[Unit]
+Description=Smee.io client
+Wants=buildbot.service
+After=buildbot.service
+
+[Service]
+User=root
+Group=root
+Restart=always
+ExecStart=/usr/local/bin/pysmee forward https://smee.io/{{SMEE_ID}} http://{{ADDRESS}}:{{PORT}}/change_hook/github

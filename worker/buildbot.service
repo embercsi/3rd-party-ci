@@ -1,0 +1,17 @@
+[Unit]
+Description=Buildbot Worker
+Wants=network.target
+After=network.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+# TODO(geguileo): Use non root user
+User=root
+Group=root
+WorkingDirectory=/root/buildbot
+ExecStart=/usr/local/bin/buildbot-worker start --nodaemon
+# if using EC2 Latent worker, you want to uncomment following line, and comment out the Restart line
+# ExecStopPost=shutdown now
+Restart=always
