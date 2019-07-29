@@ -2,7 +2,7 @@
 set -e
 
 DEFAULT_FILE='config.py'
-REQUIRED_VARIABLES="SMEE_ID DRIVER_NAME GH_TOKEN GH_EMBER_SECRET DRIVER_CONFIG"
+REQUIRED_VARIABLES="SMEE_ID DRIVER_NAME_1 GH_TOKEN GH_EMBER_SECRET DRIVER_CONFIG_1"
 
 die() { echo "$*" 1>&2 ; exit 1; }
 get_var() { if [ -z "$1" ]; then echo "$2"; else echo "$1"; fi }
@@ -28,6 +28,7 @@ done
 # Set default values for optional parameters
 CI_DIR=$(realpath $(get_var $CI_DIR '/buildbot'))
 NUM_WORKERS=$(get_var $NUM_WORKERS 1)
+NUM_DRIVERS=$(get_var $NUM_DRIVERS 1)
 WORKER_NAME=$(get_var $WORKER_NAME 'libvirt')
 WORKER_PASSWORD=$(get_var $WORKER_PASSWORD 'password')
 WEB_PORT=$(get_var $WEB_PORT 8010)
@@ -53,7 +54,6 @@ WORKER_IMAGE_URL='https://www.dropbox.com/s/ilq8nuk6k9sp5me/worker.qcow2?dl=0'
 CLOUD_INIT_DIR=$CI_DIR/cloud_init
 METADATA_FILE=$CLOUD_INIT_DIR/meta-data
 USERDATA_FILE=$CLOUD_INIT_DIR/user-data
-CLOUD_INIT_ISO=$CI_DIR/config.iso
 SSH_KEY=~/.ssh/id_rsa.pub
 
 echo "Installing packages"
@@ -84,62 +84,78 @@ fi
 
 [ ! -z "$BRIDGE_NAME" ] && bridge_param="--network bridge:$BRIDGE_NAME"
 
-echo "Generating VM's cloud-init"
-METADATA="instance-id: $DRIVER_NAME\nlocal-hostname: $DRIVER_NAME"
-if [ -e "$SSH_KEY" ]; then
-    echo "Injecting public ssh to worker from $(realpath '$SSH_KEY')"
-    METADATA="$METADATA\npublic-keys:\n  - $(cat $SSH_KEY)"
-fi
-mkdir -p $CLOUD_INIT_DIR
-echo -e "$METADATA" > $METADATA_FILE
+get_param () {
+  value=${!1}
+  [ -e "$value" ] && value=$(realpath "$value")
+  echo "$value"
+}
 
 cd $(dirname $CONFIG_FILE)
-[ -e "$DRIVER_CONFIG" ] && DRIVER_CONFIG=$(realpath "$DRIVER_CONFIG")
-[ -e "$PRE_RUN" ] && PRE_RUN=$(realpath "$PRE_RUN")
-[ -e "$POST_RUN" ] && POST_RUN=$(realpath "$POST_RUN")
+DRIVERS='[\n'
+for i in `seq 1 $NUM_DRIVERS`; do
+    DRIVERS+="{'name': '''$(get_param "DRIVER_NAME_$i")''', 'pre': '''$(get_param "PRE_RUN_$i")''', 'config': '''$(get_param "DRIVER_CONFIG_$i")''', 'post': '''$(get_param "POST_RUN_$i")'''},\n"
+done
+DRIVERS+=']'
 cd -
 
+mkdir -p $CLOUD_INIT_DIR
 
-USERDATA="#cloud-config
+VMS_XMLS='[\n'
+for i in `seq 0 $(expr $NUM_WORKERS - 1)`; do
+  name=${WORKER_NAME}$i
+  cloud_init_iso=$CI_DIR/$name.iso
+
+  echo "Generating VM's cloud-init for $name"
+  METADATA="instance-id: $name\nlocal-hostname: $name"
+  if [ -e "$SSH_KEY" ]; then
+      echo "Injecting public ssh to worker from $(realpath '$SSH_KEY')"
+      METADATA="$METADATA\npublic-keys:\n  - $(cat $SSH_KEY)"
+  fi
+  echo -e "$METADATA" > $METADATA_FILE
+
+  USERDATA="#cloud-config
 
 write_files:
   - path: /root/buildbot/config.py
     content: |
       PORT = '$BUILDBOT_WORKER_PORT'
       PASSWORD = '$WORKER_PASSWORD'
-      WORKER_NAME = '$WORKER_NAME'
+      WORKER_NAME = '$name'
   - path: /etc/iscsi/initiatorname.iscsi
-    content: InitiatorName=iqn.1994-05.com.redhat:$WORKER_NAME
+    content: InitiatorName=iqn.1994-05.com.redhat:$name
 runcmd:
   - systemctl restart iscsid
 "
 
-if [ ! -e $SSH_KEY ]; then
-    echo 'Enabling password access to worker'
-    USERDATA="$USERDATA\npassword: $WORKER_PASSWORD\nchpasswd: { expire: False }\nssh_pwauth: True"
-fi
+  if [ ! -e $SSH_KEY ]; then
+      echo 'Enabling password access to worker'
+      USERDATA="$USERDATA\npassword: $WORKER_PASSWORD\nchpasswd: { expire: False }\nssh_pwauth: True"
+  fi
 
-echo -e "$USERDATA" > $USERDATA_FILE
+  echo -e "$USERDATA" > $USERDATA_FILE
 
-(cd $CLOUD_INIT_DIR && genisoimage -o $CLOUD_INIT_ISO -V cidata -r -J meta-data user-data)
+  (cd $CLOUD_INIT_DIR && genisoimage -o $cloud_init_iso -V cidata -r -J meta-data user-data)
 
-echo "Generating VM's XML"
+  echo "Generating VM's XML for $name"
 
-qemu-img create -f qcow2 -o backing_file=$WORKER_IMAGE $WORKER_IMAGE.libvirt
-VM_XML=$(virt-install \
-  --name libvirt \
-  --description "Buildbot libvirt worker" \
-  --os-type=Linux \
-  --os-variant=centos7.0 \
-  --ram=1024 \
-  --vcpus=2 \
-  --disk path=$WORKER_IMAGE.libvirt,bus=virtio \
-  --disk path=$CLOUD_INIT_ISO,device=cdrom \
-  --boot hd \
-  --graphics none \
-  --print-xml)
-rm $WORKER_IMAGE.libvirt
-[ -z "$VM_XML" ] && die "Error generating VM's XML"
+  qemu-img create -f qcow2 -o backing_file=$WORKER_IMAGE $WORKER_IMAGE.$name
+  VM_XML=$(virt-install \
+    --name $name \
+    --description "Buildbot libvirt worker" \
+    --os-type=Linux \
+    --os-variant=centos7.0 \
+    --ram=1024 \
+    --vcpus=2 \
+    --disk path=$WORKER_IMAGE.$name,bus=virtio \
+    --disk path=$cloud_init_iso,device=cdrom \
+    --boot hd \
+    --graphics none \
+    --print-xml)
+  rm $WORKER_IMAGE.$name
+  [ -z "$VM_XML" ] && die "Error generating VM's XML"
+  VMS_XMLS+="'''$VM_XML''',\n"
+done
+VMS_XMLS+=']'
 
 echo "Installing additional packages for buildbot"
 # txrequests for GitHubStatusPush
@@ -161,16 +177,14 @@ BUILDBOT_WEB_PORT = '$WEB_PORT'
 BUILDBOT_DB_URL = '$BUILDBOT_DB_URL'
 BUILDBOT_WORKER_PORT = '$BUILDBOT_WORKER_PORT'
 IMAGE_LOCATION = '$WORKER_IMAGE'
+NUM_WORKERS=$NUM_WORKERS
 WORKER_NAME='$WORKER_NAME'
 WORKER_PASSWORD = '$WORKER_PASSWORD'
-DRIVER_NAME = '$DRIVER_NAME'
 GH_TOKEN = '$GH_TOKEN'
 GH_USER = '$GH_USER'
 GH_EMBER_SECRET = '$GH_EMBER_SECRET'
-PRE_RUN = '''$PRE_RUN'''
-POST_RUN = '''$POST_RUN'''
-DRIVER_CONFIG = '''$DRIVER_CONFIG'''
-WORKER_XML = '''$VM_XML'''" > $CI_DIR/params.py
+DRIVERS = $DRIVERS
+WORKERS_XML = $VMS_XMLS" > $CI_DIR/params.py
 
 echo "Enabling buildbot service"
 cp buildbot.service.template /etc/systemd/system/buildbot.service

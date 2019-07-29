@@ -68,11 +68,15 @@ The CI setup configuration file (`config`) is a template that is prefilled with 
 
 - Pre and post run scripts: Scripts to run on the host where the Ember-CSI container under tests is going to execute.  An example where this is useful is if you want to create a random pool in your storage backend specific for this test run as a pre-run step and then you want to delete the pool as a post-run step.  `PRE_RUN` and `POST_RUN` options can be set to a string with the script code itself or with the location of a local file that will be automatically uploaded to the VM running the tests. `POST_RUN` scripts will receive an argument specifying whether the test run was a success or not.
 
-- Driver configuration: Your specific storage configuration for Ember-CSI and is set in the `DRIVER_CONFIG` parameter.  You can find more details on how to get the right JSON configuration string in the [Driver Validation article](https://ember-csi.io/post/validation/#driver-configuration-parameters).  There are cases where you may need to dynamically create the configuration (for example if you are creating a random test specific pool), and that is why `DRIVER_CONFIG` can be a local script file that will be uploaded sourced to get the driver configuration.  If `DRIVER_CONFIG` points to a script file this script must set a `DRIVER_CONFIG` environmental variable with the right JSON configuration string.
+- Driver configuration: Your specific storage configuration for Ember-CSI and is set in the `DRIVER_CONFIG_1` parameter.  You can find more details on how to get the right JSON configuration string in the [Driver Validation article](https://ember-csi.io/post/validation/#driver-configuration-parameters).  There are cases where you may need to dynamically create the configuration (for example if you are creating a random test specific pool), and that is why `DRIVER_CONFIG_1` can be a local script file that will be uploaded sourced to get the driver configuration.  If `DRIVER_CONFIG_1` points to a script file this script must set a `DRIVER_CONFIG` environmental variable with the right JSON configuration string.
 
 There are some useful sample configuration files in the project's repository that can be used as reference: [https://github.com/embercsi/3rd-party-ci/tree/master/examples](https://github.com/embercsi/3rd-party-ci/tree/master/examples).
 
-After making sure that `GH_TOKEN`, `DRIVER_CONFIG`, `PRE_RUN`, and `POST_RUN` are setup to our liking we can proceed to deploy the CI system.
+After making sure that `GH_TOKEN`, `DRIVER_CONFIG_1`, `PRE_RUN_1`, and `POST_RUN_1` are setup to our liking we can proceed to deploy the CI system.
+
+In most cases configuring just 1 backend will be enough, but there may be cases where we want to configure multiple backends, for example if we have an iSCSI and FC driver.  In those cases we can let the Ember team know about it and they will provide a configuration file with the `NUM_DRIVERS` parameter set to the number of drivers we want to run and the necessary `DRIVER_NAME_#` values.  In this case you'll also need to set `DRIVER_CONFIG_#`, `PRE_RUN_#` and `POST_RUN_#` like you did for the first backend.
+
+By default the backends will be tested sequentially, since the default number of workers is 1, but you can make them run in parallel setting the `NUM_WORKERS` parameter to the number of different backend configurations we'll be testing.  Running tests in parallel will require more system resources.
 
 ### Deployment
 
@@ -158,7 +162,7 @@ $ bash -c '. .my-config/config; pysmee send https://smee.io/$SMEE_ID ./my-config
 
 ### Report back
 
-Now that we have the CI up and running we should contact the Ember-CSI team to let them know our CI is ready and provide them with the `DRIVER_CONFIG` value we have used, masking all sensitive data such as usernames, passwords, IPs, etc. with somewhat meaningful names such as `"username"`, `"password"`, `"w.x.y.z"` like we have in the other CI configuration examples.
+Now that we have the CI up and running we should contact the Ember-CSI team to let them know our CI is ready and provide them with the `DRIVER_CONFIG_1` value we have used, masking all sensitive data such as usernames, passwords, IPs, etc. with somewhat meaningful names such as `"username"`, `"password"`, `"w.x.y.z"` like we have in the other CI configuration examples.
 
 The team will use this information to update the project's documentation with a valid Ember-CSI configuration for your specific backend to serve as reference for users of your backend.
 
@@ -172,14 +176,12 @@ Some of the current limitations are:
 
 - Only CentOS is supported
 - Setup code is an ugly and non-robust bash script
-- Only 1 backend is supported on the installation: Not helpful for system with iSCSI and FC drivers
 - No support for manual job triggering via pull request comments
 - Python code to handle jobs can be more robust and cleaner
 - No auto-update of the worker VM image
 - No CI log rotation
 - Inefficient image build: Every jobs build it from scratch and download everything from Internet
 - No support for custom requirements/dependencies in the Ember-CSI container
-- Only supports one worker
 
 [Ember-CSI]: https://ember-csi.io
 [Ember-CSI repository]: https://github.com/embercsi/ember-csi
