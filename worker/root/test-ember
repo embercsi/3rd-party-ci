@@ -26,7 +26,7 @@ save_logs_and_stop() {
 trap "save_logs_and_stop" ERR
 
 # Run the ember-csi container
-docker run -d -e "X_CSI_BACKEND_CONFIG=$DRIVER_CONFIG" --env-file /root/env-file -t --privileged --net=host --ipc=host \
+docker run -d -e "X_CSI_BACKEND_CONFIG=$DRIVER_CONFIG" -e "X_CSI_SYSTEM_FILES=$CSI_SYSTEM_FILES" --env-file /root/env-file -t --privileged --net=host --ipc=host \
     -v /etc/iscsi:/etc/iscsi \
     -v /dev:/dev \
     -v /etc/lvm:/etc/lvm \

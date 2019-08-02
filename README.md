@@ -78,6 +78,8 @@ In most cases configuring just 1 backend will be enough, but there may be cases 
 
 By default the backends will be tested sequentially, since the default number of workers is 1, but you can make them run in parallel setting the `NUM_WORKERS` parameter to the number of different backend configurations we'll be testing.  Running tests in parallel will require more system resources.
 
+Some drivers need additional files to be present in the running container.  For example the Ceph/RBD driver needs the Ceph cluster configuration file and the credentials.  To support this we must use a script as `DRIVER_CONFIG_#` and this script must create a tar file under `/tmp` and set variable `CSI_SYSTEM_FILES` with the location of this file.  The Ceph example is a good reference of how this can be done.
+
 ### Deployment
 
 The current deployment tool is pretty rudimentary.  Only supports CentOS, runs most of the commands as root, builds the container for each pull request, and so on, so we recommend running it in a VM with nested virtualization until we address these limitations.
