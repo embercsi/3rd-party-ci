@@ -1,0 +1,14 @@
+# SMEE ID that will send us the notifications from GitHub
+SMEE_ID="e2DqiMEezevJYqMu"
+
+# Token used to send status of the test runs
+GH_TOKEN="4ff72116d06d0698288db11b01582b49453a69de"
+GH_USER="Akrog"
+
+# Secret sent by Git Hub with the notifications
+GH_EMBER_SECRET="too-many-secrets"
+
+# The name of our CI driver
+DRIVER_NAME_1="Ceph"
+DRIVER_CONFIG_1="ceph-cfg.sh"
+PRE_RUN_1='create-ceph.cfg'
