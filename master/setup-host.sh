@@ -186,6 +186,12 @@ GH_EMBER_SECRET = '$GH_EMBER_SECRET'
 DRIVERS = $DRIVERS
 WORKERS_XML = $VMS_XMLS" > $CI_DIR/params.py
 
+fw_status=$(firewall-cmd --state || true)
+if [ "$fw_status" == "running" ]; then
+  firewall-cmd --permanent --add-port=$BUILDBOT_WORKER_PORT/tcp
+  systemctl restart firewalld
+fi
+
 echo "Enabling buildbot service"
 cp buildbot.service.template /etc/systemd/system/buildbot.service
 sed -i s#{{WORKING_DIRECTORY}}#$CI_DIR# /etc/systemd/system/buildbot.service
