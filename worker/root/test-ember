@@ -42,7 +42,7 @@ docker run -d -e "X_CSI_BACKEND_CONFIG=$DRIVER_CONFIG" -e "X_CSI_SYSTEM_FILES=$C
 
 
 # --ginkgo.failFast --test.parallel 1
-/root/csi-sanity --test.v --csi.endpoint=127.0.0.1:50051 --test.timeout 15m --ginkgo.v --ginkgo.progress
+/root/csi-sanity --test.v --csi.endpoint=127.0.0.1:50051 --test.timeout 0 --ginkgo.v --ginkgo.progress
 # Mark that the run has been a success
 touch /root/ok
 
