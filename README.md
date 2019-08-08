@@ -88,7 +88,7 @@ Setup is very straightforward. Assuming we have uploaded our `config` file and a
 
 ```
 $ git clone --depth 1 https://github.com/embercsi/3rd-party-ci
-$ cd 3rd-parti-ci/master
+$ cd 3rd-party-ci/master
 $ sudo ./setup-host.sh ../../my-config/config
 ```
 
@@ -101,7 +101,7 @@ Building the image can be accomplished like this:
 ```
 $ sudo yum -y install qemu-kvm libvirt libguestfs-tools virt-install
 $ sudo systemctl enable --now libvirtd
-$ cd 3rd-parti-ci/worker
+$ cd 3rd-party-ci/worker
 $ sudo IMAGE_LOCATION=/buildbot ./create-worker-image.sh
 $ sudo rm /buildbot/centos.qcow2
 ```
