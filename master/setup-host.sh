@@ -172,7 +172,7 @@ mkdir -p $CI_DIR
 cp master.cfg $CI_DIR
 cp buildbot.tac $CI_DIR//buildbot.tac
 echo -e \
-"BUILDBOT_WEB_URL = 'http://$WEB_ADDR'
+"BUILDBOT_WEB_URL = 'http://$WEB_ADDR:$WEB_PORT/'
 BUILDBOT_WEB_PORT = '$WEB_PORT'
 BUILDBOT_DB_URL = '$BUILDBOT_DB_URL'
 BUILDBOT_WORKER_PORT = '$BUILDBOT_WORKER_PORT'
