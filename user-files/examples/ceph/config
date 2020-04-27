@@ -1,0 +1,11 @@
+#!/bin/env bash
+
+DRIVER_CONFIG='{"name":"ceph","driver":"RBD","rbd_user":"admin","rbd_pool":"rbd","rbd_ceph_conf":"/etc/ceph/ceph.conf","rbd_keyring_conf":"/etc/ceph/ceph.client.admin.keyring"}'
+
+# Add the ceph config and credentials
+_ceph_dir=etc/ceph
+mkdir -p /tmp/$_ceph_dir
+cp /$_ceph_dir/* /tmp/$_ceph_dir
+(cd /tmp && tar cvf /tmp/files.tar $_ceph_dir)
+
+CSI_SYSTEM_FILES='/tmp/files.tar'

@@ -1,0 +1,51 @@
+{
+    "variables": {
+        "centos": "7",
+        "contents": "base",
+        "scripts": "./scripts/centos{{user `centos`}}/{{user `contents`}}",
+        "data": "./data/centos{{user `centos`}}/{{user `contents`}}"
+    },
+    "description": "Ember-CSI 3rd party CI job CentOS {{user `centos`}} {{user `contents`}} image",
+    "builders": [
+        {
+            "type": "vagrant",
+            "output_dir": "output",
+            "source_path": "centos/{{user `centos`}}",
+            "box_version": "2020.01",
+            "provider": "libvirt",
+            "add_force": true,
+            "box_name": "ember-centos-{{user `centos`}}-{{user `contents`}}",
+            "teardown_method": "destroy",
+            "communicator": "ssh"
+        }
+    ],
+    "provisioners": [
+        {
+            "type": "shell",
+            "inline":["mkdir /tmp/{scripts,data}"]
+        },
+        {
+            "type": "file",
+            "source": "{{user `data`}}/",
+            "destination": "/tmp/data"
+        },
+        {
+            "type": "shell",
+            "inline":["sudo cp -pr /tmp/data/. /"]
+        },
+        {
+            "type": "file",
+            "source": "{{user `scripts`}}/",
+            "destination": "/tmp/scripts"
+        },
+        {
+            "type": "shell",
+            "script": "./scripts/run.sh",
+            "remote_path": "/tmp/run.sh"
+        },
+        {
+            "type": "shell",
+            "inline":["sudo sync"]
+        }
+    ]
+}

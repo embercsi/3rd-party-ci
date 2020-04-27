@@ -1,1 +1,6 @@
 tmp/
+.*.sw?
+!images/boxes/.placeholder
+images/boxes
+images/packer
+images/output

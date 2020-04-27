@@ -1,0 +1,3 @@
+#!/bin/env bash
+
+DRIVER_CONFIG="{\"target_protocol\":\"iscsi\",\"target_ip_address\":\"$HOST_IP\",\"name\":\"$BACKEND_NAME\",\"driver\":\"lvmvolume\",\"volume_group\":\"ember-volumes\",\"target_helper\":\"lioadm\",\"multipath\":false}"

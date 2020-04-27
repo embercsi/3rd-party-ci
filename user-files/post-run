@@ -1,0 +1,14 @@
+#!/bin/env bash
+#
+# The CI will execute this script inside the VM used to run the tests after
+# each job run.  It will use the "vagrant" user that has passwordless sudo
+# capabilities.
+#
+# This file is only used by the 3rd party CI runs, and will not be overwritten
+# by the CI.
+#
+# Possible uses for this file:
+#   - Cleaning up "per test run" pool.
+#
+# The script receives 1 parameter with the result of this test run. A value of
+# 0 means it was successful and any other value means that if failed.

@@ -1,0 +1,9 @@
+FROM ruby:2.6.6-buster
+
+RUN git clone https://github.com/hashicorp/vagrant.git && \
+    cd vagrant && \
+    bundle install
+
+WORKDIR /vagrant
+ENTRYPOINT ["bundle", "exec", "vagrant"]
+CMD ["--help"]

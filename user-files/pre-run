@@ -1,0 +1,20 @@
+#!/bin/env bash
+#
+# The CI will execute this script inside the VM used to run the tests before
+# running each job.  It will use the "vagrant" user that has passwordless sudo
+# capabilities.
+#
+# This file is only used by the 3rd party CI runs, and will not be overwritten
+# by the CI.
+#
+# Possible uses for this file:
+#   - Creating a "per test run" pool to be used in the test and removing it in
+#     the post-run script.
+#   - Deploying a simulator VM to run the tests.
+#   - Deploying software defined storage.
+#
+# Examples located in ../user-files/examples:
+#   - lvm/pre-run: The LVM backend create the necessary PV and VG to run the
+#     tests.
+#   - ceph/pre-run: The Ceph backend runs a Ceph demo container with a toy
+#     cluster.

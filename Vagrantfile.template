@@ -1,0 +1,48 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Configuration must be set as env vars
+MEMORY = ENV.fetch('EMBER_VAGRANT_MEMORY', 8192)
+CPUS = ENV.fetch('EMBER_VAGRANT_CPUS', 2)
+IMAGE = ENV.fetch('EMBER_VAGRANT_IMAGE', 'ember-csi/ci-centos7-base')
+CONFIG_DIR = ENV.fetch('EMBER_VAGRANT_CONFIG_DIR', '.')
+WORKER = ENV.fetch('EMBER_VAGRANT_WORKER', 'ember-csi')
+EMBER_IMAGE = ENV.fetch('EMBER_IMAGE', 'embercsi/ember-csi:master')
+JOB_NAME = ENV.fetch('JOB_NAME', 'unknown')
+JOB_ID = ENV.fetch('JOB_ID', 'unknown')
+BACKEND_NAME = ENV.fetch('BACKEND_NAME', 'unknown')
+CENTOS_VERSION = ENV.fetch('CENTOS_VERSION', '')
+
+Vagrant.configure("2") do |config|
+    config.vm.box = "#{IMAGE}"
+    config.vm.box_check_update = false
+
+    # Override the default network configuration
+    config.vm.provider :libvirt do |p|
+        p.management_network_name = 'vagrant-libvirt-new'
+        p.management_network_address = `vagrant-network.sh`
+    end
+
+    config.vm.provider :libvirt do |v,override|
+        override.vm.synced_folder '.', '/vagrant', disabled: true
+        override.vm.synced_folder '.', '/ember-ci', type: 'nfs'
+        override.vm.synced_folder CONFIG_DIR, '/ember-config', type: 'rsync', rsync__exclude: ['.git']
+
+        v.memory = MEMORY
+        v.cpus = CPUS
+        v.nested = true
+
+        # private_network configuration is not supported by vagrant
+        # when using qemu:///session
+        if v.respond_to?(:qemu_use_session)
+            v.qemu_use_session = false
+        end
+    end
+    config.vm.define "#{BACKEND_NAME}-#{JOB_ID}" do |node|
+        node.vm.provision "shell", inline: "echo hello from node #{WORKER}-#{IMAGE}"
+        node.vm.provision "shell", inline: "ls -la /ember-ci"
+        node.vm.provision "shell", inline: "ls -la /ember-ci/ci-scripts"
+        node.vm.provision "shell", inline: "ls -la /ember-config"
+        node.vm.provision "shell", inline: "/ember-ci/ci-scripts/run.sh #{EMBER_IMAGE}#{CENTOS_VERSION} #{JOB_NAME} #{JOB_ID} #{BACKEND_NAME}"
+    end
+end

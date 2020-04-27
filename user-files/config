@@ -1,0 +1,25 @@
+#!/bin/env bash
+#
+# The CI will source this script inside the VM used to run the tests for each
+# CI job using the "vagrant" user that has passwordless sudo capabilities in
+# order to get the necessary configuration to run the tests.
+#
+# This file is only used by the 3rd party CI runs, and will not be overwritten
+# by the CI.
+#
+# Environmental variables used by the CI are:
+#   - DRIVER_CONFIG: JSON with the full Ember-CSI configuration.
+#   - CSI_SYSTEM_FILES: A .tar file with files that we want to be added to the
+#                       Ember-CSI container on start. (Optional).
+#
+# The following environmental variables are available to the script:
+#   - JOB_NAME: Full name of the CI job. ie: 3rdparty/lvm/functional-centos7
+#   - BACKEND_NAME: As defined when the runner was installed. ie: lvm
+#   - HOST_IP: The main IP of the host.
+#   - JOB_ID: The ID of the workflow
+#
+# Examples located in ../user-files/examples:
+#   - lvm/config: Straight forward configuration that uses HOST_IP and
+#     BACKEND_NAME.
+#   - ceph/config: Ceph config that uses HOST_IP and BACKEND_NAME and provides
+#     CSI_SYSTEM_FILES to pass the ceph config and keyring.
