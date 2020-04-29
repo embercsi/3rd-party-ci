@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 set -e
 
 mkdir -p /etc/ceph
@@ -13,4 +13,8 @@ done
 sleep 1
 
 # Change Ceph default features
-sed -i 's/[global]/[blobal]\nrbd default features = 3/" /etc/ceph/ceph.conf
+sed -i 's/\[global\]/[global]\nrbd default features = 3/' /etc/ceph/ceph.conf
+
+# Create the tar file with the ceph config and credentials
+sudo tar -cvf --directory=/ `pwd`/files.tar etc/ceph
+sudo chown `whoami`:`whoami` files.tar

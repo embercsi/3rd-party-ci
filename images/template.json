@@ -1,9 +1,7 @@
 {
     "variables": {
         "centos": "7",
-        "contents": "base",
-        "scripts": "./scripts/centos{{user `centos`}}/{{user `contents`}}",
-        "data": "./data/centos{{user `centos`}}/{{user `contents`}}"
+        "contents": "base"
     },
     "description": "Ember-CSI 3rd party CI job CentOS {{user `centos`}} {{user `contents`}} image",
     "builders": [
@@ -26,22 +24,25 @@
         },
         {
             "type": "file",
-            "source": "{{user `data`}}/",
+            "source": "./data/",
             "destination": "/tmp/data"
         },
         {
             "type": "shell",
-            "inline":["sudo cp -pr /tmp/data/. /"]
+            "inline":["sudo cp -prH /tmp//data/centos{{user `centos`}}/{{user `contents`}}/. /"]
         },
         {
             "type": "file",
-            "source": "{{user `scripts`}}/",
+            "source": "./scripts/",
             "destination": "/tmp/scripts"
         },
         {
             "type": "shell",
             "script": "./scripts/run.sh",
-            "remote_path": "/tmp/run.sh"
+            "remote_path": "/tmp/run.sh",
+            "environment_vars": [
+                "SCRIPTS_LOCATION=/tmp/scripts/centos{{user `centos`}}/{{user `contents`}}"
+            ]
         },
         {
             "type": "shell",

@@ -1,5 +1,6 @@
 tmp/
 .*.sw?
+.sw?
 !images/boxes/.placeholder
 images/boxes
 images/packer
