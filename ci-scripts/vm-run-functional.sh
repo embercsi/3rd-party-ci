@@ -13,7 +13,7 @@ echo "Backend configuration is located at $config_path"
 
 SCRIPT_DIR=$(dirname `realpath $0`)
 # This is the script we want vagrant to run
-ln -s ./run-functional.sh $SCRIPT_DIR/run.sh
+ln -sf ./run-functional.sh $SCRIPT_DIR/run.sh
 
 export EMBER_VAGRANT_IMAGE="ember-csi/ci-centos${CENTOS_VERSION}-base"
 export EMBER_VAGRANT_MEMORY=4096
@@ -26,7 +26,7 @@ export EMBER_VAGRANT_WORKER="functional${CENTOS_VERSION}-${BACKEND_NAME}-${JOB_I
 ${SCRIPT_DIR}/update-box.sh $EMBER_VAGRANT_IMAGE
 
 BASE_DIR=`realpath $SCRIPT_DIR/../`
-mkdir $BASE_DIR/artifacts
+mkdir -p $BASE_DIR/artifacts
 
 echo "Running $WORKER VM"
 
@@ -40,6 +40,10 @@ if vagrant up; then
 else
     result=$?
     echo "Failed run"
+    if [[ -n "$SSH_ON_ERROR" ]]; then
+        echo "SSHing into the failed VM.  The VM will be deleted on exit"
+        vagrant ssh
+    fi
 fi
 
 echo "Generated artifacts: `ls $BASE_DIR/artifacts`"

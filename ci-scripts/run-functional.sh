@@ -6,15 +6,15 @@
 #      job_id
 #      backend_name
 set -e
-set -x
+
+if [[ -n "$DEBUG" ]]; then
+    set -x
+fi
 
 SCRIPT_DIR=$(dirname `realpath $0`)
 
 # Set env vars for user backend scripts
 export HOST_IP=$(/sbin/ip -o -4 addr list eth0 | awk '{print $4}' | cut -d/ -f1)
-export JOB_NAME=${2}
-export JOB_ID=${3}
-export BACKEND_NAME=${4}
 
 echo "Functional tests for ${1}"
 
@@ -28,7 +28,7 @@ fi
 echo "Sourcing backend configuration "
 source ./config
 
-X_CSI_SPEC_VERSION=${X_CSI_SPEC_VERSION:-"v1.1"}
+X_CSI_SPEC_VERSION=${CSI_SPEC_VERSION:-"v1.1"}
 X_CSI_PERSISTENCE_CONFIG='{"storage":"memory"}'
 X_CSI_EMBER_CONFIG='{"project_id":"io.ember-csi","user_id":"io.ember-csi","root_helper":"sudo","disable_logs":false,"debug":true,"request_multipath":false,"state_path":"/tmp"}'
 
@@ -42,11 +42,12 @@ echo "Starting Ember-CSI container"
 echo -e "X_CSI_SYSTEM_FILES=$CSI_SYSTEM_FILES\nX_CSI_SPEC_VERSION=$X_CSI_SPEC_VERSION\nX_CSI_EMBER_CONFIG=$X_CSI_EMBER_CONFIG\nX_CSI_PERSISTENCE_CONFIG=$X_CSI_PERSISTENCE_CONFIG\nIMAGE=${1}" | tee /ember-ci/artifacts/docker-env-vars
 
 if [[ -n $CSI_SYSTEM_FILES ]]; then
-    system_files_destination="/tmp/`basename $CSI_SYSTEM_FILES`"
-    extra_args="-v \"/ember-config/$CSI_SYSTEM_FILES:$system_files_destination:ro" -e \"X_CSI_SYSTEM_FILES=${system_files_destination}" "
+    system_files_destination="/root/`basename $CSI_SYSTEM_FILES`"
+    extra_args="-v /ember-config/$CSI_SYSTEM_FILES:$system_files_destination:ro -e X_CSI_SYSTEM_FILES=${system_files_destination}"
 fi
 
-docker run --rm --name ember -t --privileged --net=host --ipc=host $extra_args -e X_CSI_SPEC_VERSION=$X_CSI_SPEC_VERSION -e CSI_MODE=all -e X_CSI_BACKEND_CONFIG=$DRIVER_CONFIG -e X_CSI_EMBER_CONFIG=$X_CSI_EMBER_CONFIG -e X_CSI_PERSISTENCE_CONFIG=$X_CSI_PERSISTENCE_CONFIG -v /etc/iscsi:/etc/iscsi -v /dev:/dev -v /etc/lvm:/etc/lvm -v /var/lock/lvm:/var/lock/lvm -v /etc/multipath:/etc/multipath -v /etc/multipath.conf:/etc/multipath.conf -v /lib/modules:/lib/modules:ro -v /etc/localtime:/etc/localtime:ro -v /run/udev:/run/udev:ro -v /run/lvm:/run/lvm:ro -v /var/lib/iscsi:/var/lib/iscsi ${1} > /ember-ci/artifacts/ember-csi.logs &
+# We need to mount /tmp because that's where csi-sanity creates directories for publishing
+docker run --rm --name ember -t --privileged --net=host --ipc=host $extra_args -e X_CSI_SPEC_VERSION=$X_CSI_SPEC_VERSION -e CSI_MODE=all -e X_CSI_BACKEND_CONFIG=$DRIVER_CONFIG -e X_CSI_EMBER_CONFIG=$X_CSI_EMBER_CONFIG -e X_CSI_PERSISTENCE_CONFIG=$X_CSI_PERSISTENCE_CONFIG -v /etc/iscsi:/etc/iscsi -v /dev:/dev -v /etc/lvm:/etc/lvm -v /var/lock/lvm:/var/lock/lvm -v /etc/multipath:/etc/multipath -v /etc/multipath.conf:/etc/multipath.conf -v /lib/modules:/lib/modules:ro -v /etc/localtime:/etc/localtime:ro -v /run/udev:/run/udev:ro -v /run/lvm:/run/lvm:ro -v /var/lib/iscsi:/var/lib/iscsi -v /tmp:/tmp ${1} &> /ember-ci/artifacts/ember-csi.logs &
 
 # Wait until ember is running with a 30 seconds timeout
 test_result=1

@@ -16,5 +16,5 @@ sleep 1
 sed -i 's/\[global\]/[global]\nrbd default features = 3/' /etc/ceph/ceph.conf
 
 # Create the tar file with the ceph config and credentials
-sudo tar -cvf --directory=/ `pwd`/files.tar etc/ceph
+sudo tar --directory=/ -cvf `pwd`/files.tar etc/ceph
 sudo chown `whoami`:`whoami` files.tar

@@ -8,7 +8,6 @@ IMAGE = ENV.fetch('EMBER_VAGRANT_IMAGE', 'ember-csi/ci-centos7-base')
 CONFIG_DIR = ENV.fetch('EMBER_VAGRANT_CONFIG_DIR', '.')
 WORKER = ENV.fetch('EMBER_VAGRANT_WORKER', 'ember-csi')
 EMBER_IMAGE = ENV.fetch('EMBER_IMAGE', 'embercsi/ember-csi:master')
-JOB_NAME = ENV.fetch('JOB_NAME', 'unknown')
 JOB_ID = ENV.fetch('JOB_ID', 'unknown')
 BACKEND_NAME = ENV.fetch('BACKEND_NAME', 'unknown')
 CENTOS_VERSION = ENV.fetch('CENTOS_VERSION', '')
@@ -40,9 +39,12 @@ Vagrant.configure("2") do |config|
     end
     config.vm.define "#{BACKEND_NAME}-#{JOB_ID}" do |node|
         node.vm.provision "shell", inline: "echo hello from node #{WORKER}-#{IMAGE}"
-        node.vm.provision "shell", inline: "ls -la /ember-ci"
-        node.vm.provision "shell", inline: "ls -la /ember-ci/ci-scripts"
-        node.vm.provision "shell", inline: "ls -la /ember-config"
-        node.vm.provision "shell", inline: "/ember-ci/ci-scripts/run.sh #{EMBER_IMAGE}#{CENTOS_VERSION} #{JOB_NAME} #{JOB_ID} #{BACKEND_NAME}"
+        node.vm.provision "shell", inline: "/ember-ci/ci-scripts/run.sh #{EMBER_IMAGE}",
+          env: {"CSI_SPEC_VERSION" => ENV.fetch('CSI_SPEC_VERSION', 'v1.1'),
+                "JOB_NAME" => ENV.fetch('JOB_NAME', 'unknown'),
+                "JOB_ID" => JOB_ID,
+                "BACKEND_NAME" => BACKEND_NAME,
+                # Don't turn on DEBUG mode on the gate, as this will expose the backend configuration
+                "DEBUG" => ENV.fetch('DEBUG', '')}
     end
 end
